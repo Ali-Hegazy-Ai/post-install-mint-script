@@ -132,7 +132,41 @@ sudo apt-get install -y \
 success "Media codecs installed"
 
 # ---------------------------------------------------------------------------
-# 3. Proprietary graphics driver prompt
+# 3. System tools, utilities, and development core
+# ---------------------------------------------------------------------------
+step "Installing system tools, utilities, and development core packages"
+
+sudo apt-get install -y \
+    timeshift \
+    gnome-disk-utility \
+    gnome-terminal \
+    btop \
+    vlc \
+    git \
+    build-essential \
+    cmake \
+    gdb
+
+success "System tools and development core packages installed"
+
+# Set gnome-terminal as the default terminal emulator
+# Try update-alternatives first (works on most Debian/Ubuntu derivatives)
+GNOME_TERMINAL_PATH=$(update-alternatives --list x-terminal-emulator 2>/dev/null \
+    | grep -i gnome-terminal | head -n1 || true)
+if [[ -n "${GNOME_TERMINAL_PATH}" ]]; then
+    sudo update-alternatives --set x-terminal-emulator "${GNOME_TERMINAL_PATH}"
+    success "gnome-terminal set as default via update-alternatives"
+fi
+
+# Also set via gsettings for the Cinnamon desktop (Linux Mint default DE)
+if command -v gsettings &>/dev/null; then
+    gsettings set org.cinnamon.desktop.default-applications.terminal exec 'gnome-terminal' 2>/dev/null || true
+    gsettings set org.cinnamon.desktop.default-applications.terminal exec-arg '-x' 2>/dev/null || true
+    success "gnome-terminal set as default via gsettings (Cinnamon)"
+fi
+
+# ---------------------------------------------------------------------------
+# 4. Proprietary graphics driver prompt
 # ---------------------------------------------------------------------------
 step "Checking for proprietary graphics drivers"
 
@@ -158,7 +192,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. PostgreSQL — via official apt repository
+# 5. PostgreSQL — via official apt repository
 # ---------------------------------------------------------------------------
 step "Installing PostgreSQL via official repository"
 
@@ -203,7 +237,71 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Telegram
+# 6. Docker — via official Docker apt repository
+# ---------------------------------------------------------------------------
+step "Installing Docker"
+
+if ! command -v docker &>/dev/null; then
+    info "Adding Docker GPG key and apt repository…"
+
+    DOCKER_KEYRING="/usr/share/keyrings/docker-archive-keyring.gpg"
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+        | sudo gpg --dearmor -o "${DOCKER_KEYRING}"
+
+    # Linux Mint is Ubuntu-based; use the upstream Ubuntu codename for the repo.
+    # Source /etc/os-release to access UBUNTU_CODENAME and VERSION_CODENAME.
+    # shellcheck disable=SC1091
+    source /etc/os-release
+    UBUNTU_CODENAME="${UBUNTU_CODENAME:-${VERSION_CODENAME}}"
+    echo "deb [arch=amd64 signed-by=${DOCKER_KEYRING}] \
+https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable" \
+        | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    sudo apt-get update -y
+    sudo apt-get install -y \
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin
+
+    # Add current user to the docker group so Docker can run without sudo
+    sudo usermod -aG docker "${USER}"
+
+    success "Docker installed — log out and back in (or run 'newgrp docker') to use without sudo"
+else
+    info "Docker already installed — skipping"
+    # Ensure user is in docker group even if Docker was installed separately
+    if ! groups "${USER}" | grep -qw docker; then
+        sudo usermod -aG docker "${USER}"
+        info "Added '${USER}' to the docker group"
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 7. GitHub CLI — via official GitHub apt repository
+# ---------------------------------------------------------------------------
+step "Installing GitHub CLI (gh)"
+
+if ! command -v gh &>/dev/null; then
+    info "Adding GitHub CLI GPG key and apt repository…"
+
+    GH_KEYRING="/usr/share/keyrings/githubcli-archive-keyring.gpg"
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        | sudo gpg --dearmor -o "${GH_KEYRING}"
+
+    echo "deb [arch=amd64 signed-by=${GH_KEYRING}] https://cli.github.com/packages stable main" \
+        | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+
+    sudo apt-get update -y
+    sudo apt-get install -y gh
+    success "GitHub CLI installed"
+else
+    info "GitHub CLI already installed — skipping"
+fi
+
+# ---------------------------------------------------------------------------
+# 8. Telegram
 # ---------------------------------------------------------------------------
 step "Installing Telegram Desktop"
 
@@ -235,7 +333,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Zen Browser
+# 9. Zen Browser
 # ---------------------------------------------------------------------------
 step "Installing Zen Browser"
 
@@ -289,7 +387,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Zed Editor
+# 10. Zed Editor
 # ---------------------------------------------------------------------------
 step "Installing Zed Editor"
 
@@ -313,7 +411,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 8. Discord
+# 11. Discord
 # ---------------------------------------------------------------------------
 step "Installing Discord"
 
@@ -345,7 +443,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 9. DBeaver Community Edition
+# 12. DBeaver Community Edition
 # ---------------------------------------------------------------------------
 step "Installing DBeaver Community Edition"
 
@@ -380,7 +478,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 10. VS Code — official Microsoft apt repository
+# 13. VS Code — official Microsoft apt repository
 # ---------------------------------------------------------------------------
 step "Installing Visual Studio Code"
 
@@ -403,7 +501,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 11. Spotify — official apt repository
+# 14. Spotify — official apt repository
 # ---------------------------------------------------------------------------
 step "Installing Spotify"
 
@@ -425,7 +523,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 12. Python development environment
+# 15. Python development environment
 # ---------------------------------------------------------------------------
 step "Setting up Python development environment"
 
@@ -437,17 +535,12 @@ PYTHON_ENVS_DIR="${HOME}/development/python_envs"
 mkdir -p "${PYTHON_ENVS_DIR}"
 success "Python envs directory ready: ${PYTHON_ENVS_DIR}"
 
-# Detect which shell config file to use
-if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$(basename "${SHELL}")" == "zsh" ]]; then
-    SHELL_RC="${HOME}/.zshrc"
-else
-    SHELL_RC="${HOME}/.bashrc"
-fi
-
-# Insert the helper function only once
-if ! grep -q "# >>> venv-helper >>>" "${SHELL_RC}" 2>/dev/null; then
-    info "Adding venv helper function to ${SHELL_RC}…"
-    cat >> "${SHELL_RC}" <<'SHELL_SNIPPET'
+# Helper to inject the venv function into a given shell config file (idempotent)
+inject_venv_helper() {
+    local rc_file="${1}"
+    if ! grep -q "# >>> venv-helper >>>" "${rc_file}" 2>/dev/null; then
+        info "Adding venv helper function to ${rc_file}…"
+        cat >> "${rc_file}" <<'SHELL_SNIPPET'
 
 # >>> venv-helper >>>
 # Helper function to create and activate Python virtual environments.
@@ -494,13 +587,22 @@ mkenv() {
 alias lsenvs='ls -1 "${PYTHON_ENVS_DIR}"'
 # <<< venv-helper <<<
 SHELL_SNIPPET
-    success "Venv helper function added to ${SHELL_RC}"
-else
-    info "Venv helper function already present in ${SHELL_RC} — skipping"
+        success "Venv helper function added to ${rc_file}"
+    else
+        info "Venv helper function already present in ${rc_file} — skipping"
+    fi
+}
+
+# Always inject into .bashrc
+inject_venv_helper "${HOME}/.bashrc"
+
+# Also inject into .zshrc if the file exists
+if [[ -f "${HOME}/.zshrc" ]]; then
+    inject_venv_helper "${HOME}/.zshrc"
 fi
 
 # ---------------------------------------------------------------------------
-# 13. Update desktop database
+# 16. Update desktop database
 # ---------------------------------------------------------------------------
 step "Refreshing application menu"
 if command -v update-desktop-database &>/dev/null; then
@@ -516,10 +618,11 @@ echo -e "${GREEN}${BOLD}╔═════════════════�
 echo -e "${GREEN}${BOLD}║        Post-installation setup complete! 🎉              ║${NC}"
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  ${CYAN}Apps installed to:${NC}  ~/apps/"
-echo -e "  ${CYAN}Python envs dir:${NC}   ~/development/python_envs/"
-echo -e "  ${CYAN}Shell helper in:${NC}   ${SHELL_RC}"
-echo -e "  ${CYAN}Usage:${NC}             mkenv my-project"
+echo -e "  ${CYAN}Apps installed to:${NC}   ~/apps/"
+echo -e "  ${CYAN}Python envs dir:${NC}    ~/development/python_envs/"
+echo -e "  ${CYAN}Shell helpers in:${NC}   ~/.bashrc (and ~/.zshrc if present)"
+echo -e "  ${CYAN}Usage:${NC}              mkenv my-project"
 echo ""
+warn "Docker group change requires a logout/login (or run 'newgrp docker') to take effect."
 warn "A reboot is recommended to apply all changes (especially graphics drivers)."
 echo ""

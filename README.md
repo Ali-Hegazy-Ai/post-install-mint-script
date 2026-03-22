@@ -27,12 +27,34 @@ chmod +x post-install.sh
 - `mint-meta-codecs`, `ubuntu-restricted-extras`, `libavcodec-extra`
 - Interactive prompt to install recommended **Nvidia / AMD proprietary drivers**
 
-### 2 · PostgreSQL (system-wide via official apt repo)
+### 2 · System tools, utilities & development core (apt)
+| Package | Purpose |
+|---------|---------|
+| `timeshift` | System snapshot / restore |
+| `gnome-disk-utility` | GNOME Disks — disk management GUI |
+| `gnome-terminal` | Terminal emulator (set as system default) |
+| `btop` | Beautiful resource monitor |
+| `vlc` | Media player |
+| `git` | Version control |
+| `build-essential` | C/C++ compiler toolchain (gcc, make, etc.) |
+| `cmake` | Cross-platform build system |
+| `gdb` | GNU debugger |
+
+`gnome-terminal` is set as the system default via `update-alternatives` and `gsettings` (Cinnamon).
+
+### 3 · PostgreSQL (system-wide via official PGDG apt repo)
 - Adds the official PostgreSQL PGDG apt repository
 - Installs `postgresql` + `postgresql-contrib`
 - Creates a superuser role and a default database matching your Linux username
 
-### 3 · Isolated apps in `~/apps/` (no hardcoded versions)
+### 4 · Docker (system-wide via official Docker apt repo)
+- Installs `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`, `docker-compose-plugin`
+- Adds your user to the `docker` group (no `sudo` needed after logout/login)
+
+### 5 · GitHub CLI (system-wide via official GitHub apt repo)
+- Installs `gh` from `cli.github.com/packages`
+
+### 6 · Isolated apps in `~/apps/` (no hardcoded versions)
 All portable apps are downloaded dynamically from their official sources and placed under `~/apps/`. A `.desktop` entry is generated in `~/.local/share/applications/` so they appear in the Linux Mint application menu.
 
 | App | Source | Directory |
@@ -43,16 +65,16 @@ All portable apps are downloaded dynamically from their official sources and pla
 | **Discord** | Official `discord.com` stable API | `~/apps/discord/` |
 | **DBeaver CE** | Latest GitHub release tarball | `~/apps/dbeaver/` |
 
-### 4 · Repository apps (via apt)
+### 7 · Repository apps (via apt)
 | App | Repository |
 |-----|-----------|
 | **VS Code** | Official Microsoft apt repo |
 | **Spotify** | Official Spotify apt repo |
 
-### 5 · Python development environment
+### 8 · Python development environment
 - Installs `python3-venv` and `python3-pip`
 - Creates `~/development/python_envs/` as the home for all virtual environments
-- Adds a **`mkenv`** helper function and **`lsenvs`** alias to `~/.bashrc` / `~/.zshrc`
+- Adds a **`mkenv`** helper function and **`lsenvs`** alias to **both** `~/.bashrc` and `~/.zshrc` (if it exists)
 
 ```bash
 # Create and activate a new environment
@@ -90,6 +112,8 @@ lsenvs
 - Internet access
 - `sudo` privileges
 - `curl`, `wget`, `jq` (installed automatically if missing)
+
+> **Note on Docker:** After the script runs, you must log out and back in (or run `newgrp docker`) before you can use Docker without `sudo`.
 
 ---
 
