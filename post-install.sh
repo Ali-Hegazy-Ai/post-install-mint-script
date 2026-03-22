@@ -68,6 +68,26 @@ mkdir -p "${APPS_DIR}"
 success "${APPS_DIR} is ready"
 
 # ---------------------------------------------------------------------------
+# Ubuntu codename — critical for Linux Mint compatibility
+# ---------------------------------------------------------------------------
+# Linux Mint uses its own release codenames (e.g. "virginia", "wilma") which
+# are NOT recognised by upstream Ubuntu-based PPAs.  Every third-party apt
+# repository added in this script MUST use the underlying Ubuntu codename
+# (e.g. "noble", "jammy") stored in UBUNTU_CODENAME inside /etc/os-release.
+# We source the file once here and export the variable so all sections below
+# can rely on it without repeating this logic.
+# shellcheck disable=SC1091
+source /etc/os-release
+if [[ -z "${UBUNTU_CODENAME:-}" ]]; then
+    error "UBUNTU_CODENAME is not set in /etc/os-release."
+    error "This usually means you are NOT running Linux Mint or a compatible Ubuntu derivative."
+    error "Aborting to avoid adding broken apt repositories."
+    exit 1
+fi
+export UBUNTU_CODENAME
+info "Detected Ubuntu base codename: ${UBUNTU_CODENAME}"
+
+# ---------------------------------------------------------------------------
 # Helper — create a .desktop entry
 # ---------------------------------------------------------------------------
 # Usage: create_desktop_entry <AppName> <exec_path> <icon_path> [<categories>]
@@ -203,9 +223,9 @@ if ! dpkg -l postgresql &>/dev/null 2>&1; then
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
         | sudo gpg --dearmor -o "${PG_KEYRING}"
 
-    # Add the apt repository
+    # Add the apt repository using the Ubuntu base codename (not the Mint codename)
     echo "deb [signed-by=${PG_KEYRING}] https://apt.postgresql.org/pub/repos/apt \
-$(lsb_release -cs)-pgdg main" \
+${UBUNTU_CODENAME}-pgdg main" \
         | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
 
     sudo apt-get update -y
@@ -248,11 +268,8 @@ if ! command -v docker &>/dev/null; then
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
         | sudo gpg --dearmor -o "${DOCKER_KEYRING}"
 
-    # Linux Mint is Ubuntu-based; use the upstream Ubuntu codename for the repo.
-    # Source /etc/os-release to access UBUNTU_CODENAME and VERSION_CODENAME.
-    # shellcheck disable=SC1091
-    source /etc/os-release
-    UBUNTU_CODENAME="${UBUNTU_CODENAME:-${VERSION_CODENAME}}"
+    # Use the global UBUNTU_CODENAME (set at script top) — Linux Mint's own
+    # codename is not recognised by Docker's repo; the Ubuntu base name is required.
     echo "deb [arch=amd64 signed-by=${DOCKER_KEYRING}] \
 https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable" \
         | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null

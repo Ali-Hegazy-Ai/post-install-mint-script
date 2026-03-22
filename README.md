@@ -108,10 +108,12 @@ lsenvs
 
 ## Requirements
 
-- Linux Mint (21.x or later recommended)
+- Linux Mint 21.x or later (or any Ubuntu-based derivative that sets `UBUNTU_CODENAME` in `/etc/os-release`)
 - Internet access
 - `sudo` privileges
 - `curl`, `wget`, `jq` (installed automatically if missing)
+
+> **Linux Mint codename compatibility:** Linux Mint uses its own release codenames (e.g. `virginia`, `wilma`) which break standard Ubuntu PPAs. The script detects the underlying Ubuntu codename from `/etc/os-release` and uses it for every third-party apt repository (PostgreSQL, Docker, VS Code, Spotify, GitHub CLI). If `UBUNTU_CODENAME` is not set, the script will abort with a clear error rather than silently adding a broken repository.
 
 > **Note on Docker:** After the script runs, you must log out and back in (or run `newgrp docker`) before you can use Docker without `sudo`.
 
