@@ -527,7 +527,49 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 14. VS Code — official Microsoft apt repository
+# 14. CLion
+# ---------------------------------------------------------------------------
+step "Installing CLion"
+
+CLION_DIR="${APPS_DIR}/clion"
+
+if [[ ! -f "${CLION_DIR}/bin/clion.sh" ]]; then
+    mkdir -p "${CLION_DIR}"
+
+    info "Querying JetBrains API for latest CLion release…"
+    CLION_URL=$(curl -s \
+        "https://data.services.jetbrains.com/products/releases?code=CL&latest=true&type=release" \
+        | jq -r '.CL[0].downloads.linux.link')
+
+    if [[ -z "${CLION_URL}" || "${CLION_URL}" == "null" ]]; then
+        warn "Could not determine CLion download URL — skipping."
+    else
+        info "Downloading CLion from ${CLION_URL}…"
+        TMP_CL=$(mktemp --suffix=.tar.gz)
+        wget -q --show-progress -O "${TMP_CL}" "${CLION_URL}"
+
+        info "Extracting CLion…"
+        tar -xzf "${TMP_CL}" -C "${CLION_DIR}" --strip-components=1
+        rm -f "${TMP_CL}"
+
+        # Locate the bundled SVG icon (path varies slightly between releases)
+        CLION_ICON=$(find "${CLION_DIR}" -maxdepth 3 -name "clion.svg" | head -n 1)
+        [[ -z "${CLION_ICON}" ]] && CLION_ICON="${CLION_DIR}/bin/clion.svg"
+
+        create_desktop_entry \
+            "CLion" \
+            "${CLION_DIR}/bin/clion.sh" \
+            "${CLION_ICON}" \
+            "Development;IDE;"
+
+        success "CLion installed to ${CLION_DIR}"
+    fi
+else
+    info "CLion already installed — skipping"
+fi
+
+# ---------------------------------------------------------------------------
+# 15. VS Code — official Microsoft apt repository
 # ---------------------------------------------------------------------------
 step "Installing Visual Studio Code"
 
@@ -550,7 +592,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 15. Spotify — official apt repository
+# 16. Spotify — official apt repository
 # ---------------------------------------------------------------------------
 step "Installing Spotify"
 
@@ -572,7 +614,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 16. Python development environment
+# 17. Python development environment
 # ---------------------------------------------------------------------------
 step "Setting up Python development environment"
 
@@ -651,7 +693,7 @@ if [[ -f "${HOME}/.zshrc" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 17. Update desktop database
+# 18. Update desktop database
 # ---------------------------------------------------------------------------
 step "Refreshing application menu"
 if command -v update-desktop-database &>/dev/null; then

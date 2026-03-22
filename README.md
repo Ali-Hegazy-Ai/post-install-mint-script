@@ -65,6 +65,7 @@ All portable apps are downloaded dynamically from their official sources and pla
 | **Discord** | Official `discord.com` stable API | `~/apps/discord/` |
 | **DBeaver CE** | Latest GitHub release tarball | `~/apps/dbeaver/` |
 | **GitKraken** | Official `release.gitkraken.com` stable URL | `~/apps/gitkraken/` |
+| **CLion** | JetBrains API latest release tarball | `~/apps/clion/` |
 
 ### 7 · Repository apps (via apt)
 | App | Repository |
@@ -98,7 +99,9 @@ lsenvs
 │   ├── telegram/
 │   ├── zen/
 │   ├── discord/
-│   └── dbeaver/
+│   ├── dbeaver/
+│   ├── gitkraken/
+│   └── clion/
 └── development/
     └── python_envs/
         ├── my-project/
