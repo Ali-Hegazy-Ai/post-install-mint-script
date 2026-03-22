@@ -495,7 +495,39 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 13. VS Code — official Microsoft apt repository
+# 13. GitKraken
+# ---------------------------------------------------------------------------
+step "Installing GitKraken"
+
+GITKRAKEN_DIR="${APPS_DIR}/gitkraken"
+
+if [[ ! -f "${GITKRAKEN_DIR}/gitkraken" ]]; then
+    mkdir -p "${GITKRAKEN_DIR}"
+
+    info "Downloading latest GitKraken Linux tarball…"
+    # GitKraken publishes a stable redirect URL that always points to the latest release
+    GITKRAKEN_URL="https://release.gitkraken.com/linux/gitkraken-amd64.tar.gz"
+
+    TMP_GK=$(mktemp --suffix=.tar.gz)
+    wget -q --show-progress -O "${TMP_GK}" "${GITKRAKEN_URL}"
+
+    info "Extracting GitKraken…"
+    tar -xzf "${TMP_GK}" -C "${GITKRAKEN_DIR}" --strip-components=1
+    rm -f "${TMP_GK}"
+
+    create_desktop_entry \
+        "GitKraken" \
+        "${GITKRAKEN_DIR}/gitkraken" \
+        "${GITKRAKEN_DIR}/gitkraken.png" \
+        "Development;RevisionControl;"
+
+    success "GitKraken installed to ${GITKRAKEN_DIR}"
+else
+    info "GitKraken already installed — skipping"
+fi
+
+# ---------------------------------------------------------------------------
+# 14. VS Code — official Microsoft apt repository
 # ---------------------------------------------------------------------------
 step "Installing Visual Studio Code"
 
@@ -518,7 +550,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 14. Spotify — official apt repository
+# 15. Spotify — official apt repository
 # ---------------------------------------------------------------------------
 step "Installing Spotify"
 
@@ -540,7 +572,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 15. Python development environment
+# 16. Python development environment
 # ---------------------------------------------------------------------------
 step "Setting up Python development environment"
 
@@ -619,7 +651,7 @@ if [[ -f "${HOME}/.zshrc" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 16. Update desktop database
+# 17. Update desktop database
 # ---------------------------------------------------------------------------
 step "Refreshing application menu"
 if command -v update-desktop-database &>/dev/null; then

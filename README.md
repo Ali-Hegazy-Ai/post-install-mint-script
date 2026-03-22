@@ -64,6 +64,7 @@ All portable apps are downloaded dynamically from their official sources and pla
 | **Zed Editor** | Official `zed.dev/install.sh` | `~/.local/bin/zed` |
 | **Discord** | Official `discord.com` stable API | `~/apps/discord/` |
 | **DBeaver CE** | Latest GitHub release tarball | `~/apps/dbeaver/` |
+| **GitKraken** | Official `release.gitkraken.com` stable URL | `~/apps/gitkraken/` |
 
 ### 7 · Repository apps (via apt)
 | App | Repository |
